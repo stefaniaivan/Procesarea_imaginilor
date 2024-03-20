@@ -38,10 +38,10 @@ void testOpenImage()
 
 int getLabel(const string& fileName) {
 	if (strstr(fileName.c_str(), "pepsi") != nullptr) {
-		return 1;
+		return 0;
 	}
 	else if (strstr(fileName.c_str(), "cola") != nullptr) {
-		return 2;
+		return 1;
 	}
 	return 0;
 }
@@ -70,66 +70,38 @@ void processImages(FileGetter& fg, set<myStruct>& fileSet, const char* message) 
 	}
 }
 
+void generateLabel(set<myStruct> testSet, set<myStruct> &newSet, const char* message) {
+	for (set<myStruct>::iterator i = testSet.begin(); i != testSet.end(); i++) {
+		int newLabel = rand() % 2;
 
-void testOpenImagesFld()
-{
-	//set<string> train;
-	//set<string> test;
-	//set<int> label;
-	//char folderName[] = "D:/PI/archive/";
-	//char trainFolderPath[] = "D:/PI/archive/train_images";
-	//char testFolderPath[] = "D:/PI/archive/test_images";
+		myStruct fileData = { i->filePath.c_str(), newLabel};
+		newSet.insert(fileData);
 
-	//FileGetter fgTrain = { trainFolderPath, "jpg" };
-	//FileGetter fgTest = { testFolderPath, "jpg" };
-
-	/*char fname[MAX_PATH];
-
-	printf("Opening images from train_images folder:\n");
-	while (fgTrain.getNextAbsFile(fname))
-	{
-		Mat src;
-		src = imread(fname);
-
-		if (src.empty())
-		{
-			printf("Could not open or find the image: %s\n", fname);
-			continue; 
-		}
-
-		train.insert(fname);
-		
-
-		if (waitKey() == 27) 
-			break;
-
-	}
-	for (set<string>::iterator i = train.begin(); i != train.end(); i++) {
-		printf("%s\n", (*i).c_str());
-	}
-
-	printf("Opening images from test_images folder:\n");
-	while (fgTest.getNextAbsFile(fname))
-	{
-		Mat src;
-		src = imread(fname);
-
-		if (src.empty())
-		{
-			printf("Could not open or find the image: %s\n", fname);
-			continue; 
-		}
-
-		test.insert(fname);
-
-		if (waitKey() == 27) 
+		if (waitKey(1) == 27)
 			break;
 	}
-	for (set<string>::iterator i = test.begin(); i!= test.end(); i++) {
-		printf("%s\n", (*i).c_str());
-	}*/
-	//processImages(fgTrain, train, "Opening images from train_images folder");
-	//processImages(fgTest, test, "Opening images from test_images folder");
+
+	for (set<myStruct>::iterator i = newSet.begin(); i != newSet.end(); i++) {
+		printf("%s, label: %d\n", i->filePath.c_str(), i->label);
+	}
+}
+
+void computeAccuracy(set<myStruct>& set1, set<myStruct>& set2) {
+	int ok = 0;
+	int total = 0;
+	float accuracy = 0;
+	if (set1.size() == set2.size()) {
+		total = set1.size();
+	}
+	for (set<myStruct>::iterator i = set1.begin(), j = set2.begin(); i != set1.end() && j != set2.end(); ++i, ++j) {
+		if (i->label == j->label) {
+			ok++;
+		}
+	}
+	accuracy = (float) ok / total;
+	printf("Ok value is %d.\n", ok);
+	printf("Total value is %d.\n", total);
+	printf("Accuracy computed: %f.\n", accuracy);
 }
 
 void testSets(const set<myStruct>& trainSet, const set<myStruct>& testSet) {
@@ -216,8 +188,9 @@ int main()
     projectPath = _wgetcwd(0, 0);
 
 	set<myStruct> train;
-	set<myStruct> test;
-	set<int> label;
+	set<myStruct> test; 
+	set<myStruct> newSet;
+	//set<int> label;
 
 	char folderName[] = "D:/PI/archive/";
 	char trainFolderPath[] = "D:/PI/archive/train_images";
@@ -234,6 +207,8 @@ int main()
 		printf("Menu:\n");
 		printf(" 1 - Open image\n");
 		printf(" 2 - Open JPG images from folder\n");
+		printf(" 3 - Generate labels\n");
+		printf(" 4 - Compute accuracy\n");
 		printf(" 12 - Mouse callback demo\n");
 		printf(" 13 - Test BATCH opening\n");
 		printf(" 0 - Exit\n\n");
@@ -253,6 +228,30 @@ int main()
 						char ch = _getch();  
 						if (ch == 'e') {
 							break;  
+						}
+					}
+				}
+				break;
+			case 3: 
+				generateLabel(test, newSet, "Generating labels for test images\n");
+				printf("Press 'e' to exit.\n");
+				while (true) {
+					if (_kbhit()) {
+						char ch = _getch();
+						if (ch == 'e') {
+							break;
+						}
+					}
+				}
+				break;
+			case 4: 
+				computeAccuracy(test, newSet);
+				printf("Press 'e' to exit.\n");
+				while (true) {
+					if (_kbhit()) {
+						char ch = _getch();
+						if (ch == 'e') {
+							break;
 						}
 					}
 				}
