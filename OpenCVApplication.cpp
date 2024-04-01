@@ -7,6 +7,7 @@
 #include <set>
 #include <stdio.h>
 #include <conio.h>
+#include <math.h>
 
 
 using namespace std;
@@ -22,7 +23,6 @@ inline bool operator<(const myStruct& lhs, const myStruct& rhs)
 {
 	return lhs.filePath < rhs.filePath;
 } 
-
 
 void testOpenImage()
 {
@@ -112,6 +112,80 @@ void testSets(const set<myStruct>& trainSet, const set<myStruct>& testSet) {
 		printf("The test has passed: train contains 470 files, test contains 115 files.\n");
 }
 
+void computeColor(const Mat& image, int &sumRed, int &sumBlue) {
+	sumRed = 0;
+	sumBlue = 0;
+
+	for (int y = 0; y < image.rows; y++) {
+		for (int x = 0; x < image.cols; x++) {
+			Vec3b intensity = image.at<Vec3b>(y, x);
+			if (intensity.val[0] == 255 && intensity.val[1] == 255 && intensity.val[2] == 255) {
+				continue; 
+			}
+			sumBlue += intensity.val[0];
+			sumRed += intensity.val[2];
+		}
+	}
+}
+
+int readColor(set<myStruct> &testSet, set<myStruct> &newSet) {
+	for (set<myStruct>::iterator it = testSet.begin(); it != testSet.end(); it++) {
+		string path_to_image = it->filePath;
+		Mat image = imread(path_to_image);
+		if (image.empty()) {
+			printf("Image could not be loaded!\n");
+			return -1;
+		}
+
+		int sumRed = 0, sumBlue = 0;
+		computeColor(image, sumRed, sumBlue);
+		int newLabel = 0;
+
+		printf("%s - ", it->filePath.c_str());
+		if (sumRed > sumBlue) {
+			newLabel = 1;
+			printf("Image contains more red.");
+		}
+		else if (sumRed < sumBlue) {
+			newLabel = 0;
+			printf("Image contains more blue.");
+		}
+		else
+			printf("Image contains same amount of blue and red.");
+
+		myStruct fileData = { it->filePath.c_str(), newLabel };
+		newSet.insert(fileData);
+		printf("Label:%d\n", newLabel);
+	}
+	return 0;
+}
+
+void computeAccuracyByColor(set<myStruct>&testSet, set<myStruct>&newSet) {
+	int mat[2][2] = { {0, 0}, {0, 0} };
+
+	for (const myStruct& real : testSet) {
+		for (const myStruct& predicted : newSet) {
+			if (real.filePath == predicted.filePath) {
+				mat[real.label][predicted.label]++;
+				break;
+			}
+		}
+	}
+
+	int ok = mat[0][0] + mat[1][1];
+	int total = ok + mat[0][1] + mat[1][0];
+	float accuracy = (float)ok / total;
+
+	printf("Confusion Matrix:\n");
+	printf("       |-------|-------|\n");
+	printf("       | Pepsi | Cola  |\n");
+	printf("|------|-------|-------|\n");
+	printf("| Pepsi| %5d | %5d |\n", mat[0][0], mat[0][1]);
+	printf("| Cola | %5d | %5d |\n", mat[1][0], mat[1][1]);
+	printf("|------|-------|-------|\n");
+
+	printf("\nAccuracy: %f\n", accuracy);
+}
 
 
 void MyCallBackFunc(int event, int x, int y, int flags, void* param)
@@ -187,9 +261,12 @@ int main()
 	cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_FATAL);
     projectPath = _wgetcwd(0, 0);
 
+	srand(int(time(0)));
+
 	set<myStruct> train;
 	set<myStruct> test; 
-	set<myStruct> newSet;
+	set<myStruct> newSetRandom;
+	set<myStruct> newSetByColor;
 	//set<int> label;
 
 	char folderName[] = "D:/PI/archive/";
@@ -199,6 +276,7 @@ int main()
 	FileGetter fgTrain = { trainFolderPath, "jpg" };
 	FileGetter fgTest = { testFolderPath, "jpg" };
 
+
 	int op;
 	do
 	{
@@ -207,8 +285,10 @@ int main()
 		printf("Menu:\n");
 		printf(" 1 - Open image\n");
 		printf(" 2 - Open JPG images from folder\n");
-		printf(" 3 - Generate labels\n");
-		printf(" 4 - Compute accuracy\n");
+		printf(" 3 - Generate random labels \n");
+		printf(" 4 - Compute random accuracy\n");
+		printf(" 5 - Generate label by image color\n");
+		printf(" 6 - Compute accuracy by color\n");
 		printf(" 12 - Mouse callback demo\n");
 		printf(" 13 - Test BATCH opening\n");
 		printf(" 0 - Exit\n\n");
@@ -233,7 +313,7 @@ int main()
 				}
 				break;
 			case 3: 
-				generateLabel(test, newSet, "Generating labels for test images\n");
+				generateLabel(test, newSetRandom, "Generating labels for test images\n");
 				printf("Press 'e' to exit.\n");
 				while (true) {
 					if (_kbhit()) {
@@ -245,7 +325,31 @@ int main()
 				}
 				break;
 			case 4: 
-				computeAccuracy(test, newSet);
+				computeAccuracy(test, newSetRandom);
+				printf("Press 'e' to exit.\n");
+				while (true) {
+					if (_kbhit()) {
+						char ch = _getch();
+						if (ch == 'e') {
+							break;
+						}
+					}
+				}
+				break;
+			case 5: 
+				readColor(test, newSetByColor);
+				printf("Press 'e' to exit.\n");
+				while (true) {
+					if (_kbhit()) {
+						char ch = _getch();
+						if (ch == 'e') {
+							break;
+						}
+					}
+				}
+				break;
+			case 6:
+				computeAccuracyByColor(test, newSetByColor);
 				printf("Press 'e' to exit.\n");
 				while (true) {
 					if (_kbhit()) {
