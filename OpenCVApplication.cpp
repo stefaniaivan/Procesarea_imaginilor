@@ -269,9 +269,12 @@ int main()
 	set<myStruct> newSetByColor;
 	//set<int> label;
 
-	char folderName[] = "D:/PI/archive/";
-	char trainFolderPath[] = "D:/PI/archive/train_images";
-	char testFolderPath[] = "D:/PI/archive/test_images";
+	char folderName[] = "C:/Users/shiri/Desktop/Anul3_Sem2/PI/archive/";
+	char trainFolderPath[] = "C:/Users/shiri/Desktop/Anul3_Sem2/PI/archive/train_images";
+	char testFolderPath[] = "C:/Users/shiri/Desktop/Anul3_Sem2/PI/archive/test_images";
+	//char folderName[] = "D:/PI/archive/";
+	//char trainFolderPath[] = "D:/PI/archive/train_images";
+	//char testFolderPath[] = "D:/PI/archive/test_images";
 
 	FileGetter fgTrain = { trainFolderPath, "jpg" };
 	FileGetter fgTest = { testFolderPath, "jpg" };
