@@ -1,6 +1,3 @@
-// OpenCVApplication.cpp : Defines the entry point for the console application.
-//
-
 #include "stdafx.h"
 #include "common.h"
 #include <opencv2/core/utils/logger.hpp>
@@ -8,7 +5,7 @@
 #include <stdio.h>
 #include <conio.h>
 #include <math.h>
-//THIS LINE I ADDED FOR TEST
+
 
 using namespace std;
 
@@ -18,20 +15,25 @@ struct myStruct {
 	string filePath;
 	int label;
 };
+typedef struct {
+	int r;
+	int g;
+	int b;
+} RGB;
 
 inline bool operator<(const myStruct& lhs, const myStruct& rhs)
 {
 	return lhs.filePath < rhs.filePath;
-} 
+}
 
 void testOpenImage()
 {
 	char fname[MAX_PATH];
-	while(openFileDlg(fname))
+	while (openFileDlg(fname))
 	{
 		Mat src;
 		src = imread(fname);
-		imshow("image",src);
+		imshow("image", src);
 		waitKey();
 	}
 }
@@ -61,7 +63,7 @@ void processImages(FileGetter& fg, set<myStruct>& fileSet, const char* message) 
 		myStruct fileData = { fname, label };
 		fileSet.insert(fileData);
 
-		if (waitKey(1) == 27) 
+		if (waitKey(1) == 27)
 			break;
 	}
 
@@ -70,11 +72,11 @@ void processImages(FileGetter& fg, set<myStruct>& fileSet, const char* message) 
 	}
 }
 
-void generateLabel(set<myStruct> testSet, set<myStruct> &newSet, const char* message) {
+void generateLabel(set<myStruct> testSet, set<myStruct>& newSet, const char* message) {
 	for (set<myStruct>::iterator i = testSet.begin(); i != testSet.end(); i++) {
 		int newLabel = rand() % 2;
 
-		myStruct fileData = { i->filePath.c_str(), newLabel};
+		myStruct fileData = { i->filePath.c_str(), newLabel };
 		newSet.insert(fileData);
 
 		if (waitKey(1) == 27)
@@ -98,7 +100,7 @@ void computeAccuracy(set<myStruct>& set1, set<myStruct>& set2) {
 			ok++;
 		}
 	}
-	accuracy = (float) ok / total;
+	accuracy = (float)ok / total;
 	printf("Ok value is %d.\n", ok);
 	printf("Total value is %d.\n", total);
 	printf("Accuracy computed: %f.\n", accuracy);
@@ -112,7 +114,7 @@ void testSets(const set<myStruct>& trainSet, const set<myStruct>& testSet) {
 		printf("The test has passed: train contains 470 files, test contains 115 files.\n");
 }
 
-void computeColor(const Mat& image, int &sumRed, int &sumBlue) {
+void computeColor(const Mat& image, int& sumRed, int& sumBlue) {
 	sumRed = 0;
 	sumBlue = 0;
 
@@ -120,15 +122,15 @@ void computeColor(const Mat& image, int &sumRed, int &sumBlue) {
 		for (int x = 0; x < image.cols; x++) {
 			Vec3b intensity = image.at<Vec3b>(y, x);
 			if (intensity.val[0] == 255 && intensity.val[1] == 255 && intensity.val[2] == 255) {
-				continue; 
+				continue;
 			}
 			sumBlue += intensity.val[0];
 			sumRed += intensity.val[2];
 		}
 	}
-}
+} 
 
-int readColor(set<myStruct> &testSet, set<myStruct> &newSet) {
+int readColor(set<myStruct>& testSet, set<myStruct>& newSet) {
 	for (set<myStruct>::iterator it = testSet.begin(); it != testSet.end(); it++) {
 		string path_to_image = it->filePath;
 		Mat image = imread(path_to_image);
@@ -160,7 +162,7 @@ int readColor(set<myStruct> &testSet, set<myStruct> &newSet) {
 	return 0;
 }
 
-void computeAccuracyByColor(set<myStruct>&testSet, set<myStruct>&newSet) {
+void computeAccuracyByColor(set<myStruct>& testSet, set<myStruct>& newSet) {
 	int mat[2][2] = { {0, 0}, {0, 0} };
 
 	for (const myStruct& real : testSet) {
@@ -186,20 +188,61 @@ void computeAccuracyByColor(set<myStruct>&testSet, set<myStruct>&newSet) {
 
 	printf("\nAccuracy: %f\n", accuracy);
 }
+// Function to calculate average RGB values of an image
+RGB calculate_average_rgb(int** image, int width, int height) {
+	int total_pixels = width * height;
+	RGB average_rgb = { 0, 0, 0 };
 
+	for (int y = 0; y < height; y++) {
+		for (int x = 0; x < width; x++) {
+			average_rgb.r += image[y][x] >> 16 & 0xFF;
+			average_rgb.g += image[y][x] >> 8 & 0xFF;
+			average_rgb.b += image[y][x] & 0xFF;
+		}
+	}
+
+	average_rgb.r /= total_pixels;
+	average_rgb.g /= total_pixels;
+	average_rgb.b /= total_pixels;
+
+	return average_rgb;
+}
+
+// Function to calculate Euclidean distance between two RGB values
+float calculate_euclidean_distance(RGB rgb1, RGB rgb2) {
+	float distance = sqrt(pow(rgb1.r - rgb2.r, 2) + pow(rgb1.g - rgb2.g, 2) + pow(rgb1.b - rgb2.b, 2));
+	return distance;
+}
+
+// Function to classify a test image based on average RGB values of training images
+char* classify_image(RGB test_rgb, RGB* train_rgbs, char** train_labels, int train_size) {
+	float min_distance = INFINITY;
+	char* predicted_label = NULL;
+
+	for (int i = 0; i < train_size; i++) {
+		float distance = calculate_euclidean_distance(test_rgb, train_rgbs[i]);
+
+		if (distance < min_distance) {
+			min_distance = distance;
+			predicted_label = train_labels[i];
+		}
+	}
+
+	return predicted_label;
+}
 
 void MyCallBackFunc(int event, int x, int y, int flags, void* param)
 {
 	//More examples: http://opencvexamples.blogspot.com/2014/01/detect-mouse-clicks-and-moves-on-image.html
 	Mat* src = (Mat*)param;
 	if (event == EVENT_LBUTTONDOWN)
-		{
-			printf("Pos(x,y): %d,%d  Color(RGB): %d,%d,%d\n",
-				x, y,
-				(int)(*src).at<Vec3b>(y, x)[2],
-				(int)(*src).at<Vec3b>(y, x)[1],
-				(int)(*src).at<Vec3b>(y, x)[0]);
-		}
+	{
+		printf("Pos(x,y): %d,%d  Color(RGB): %d,%d,%d\n",
+			x, y,
+			(int)(*src).at<Vec3b>(y, x)[2],
+			(int)(*src).at<Vec3b>(y, x)[1],
+			(int)(*src).at<Vec3b>(y, x)[0]);
+	}
 }
 
 void testMouseClick()
@@ -239,9 +282,9 @@ void showHistogram(const std::string& name, int* hist, const int  hist_cols, con
 
 	//computes histogram maximum
 	int max_hist = 0;
-	for (int i = 0; i<hist_cols; i++)
-	if (hist[i] > max_hist)
-		max_hist = hist[i];
+	for (int i = 0; i < hist_cols; i++)
+		if (hist[i] > max_hist)
+			max_hist = hist[i];
 	double scale = 1.0;
 	scale = (double)hist_height / max_hist;
 	int baseline = hist_height - 1;
@@ -256,15 +299,15 @@ void showHistogram(const std::string& name, int* hist, const int  hist_cols, con
 }
 
 
-int main() 
+int main()
 {
 	cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_FATAL);
-    projectPath = _wgetcwd(0, 0);
+	projectPath = _wgetcwd(0, 0);
 
 	srand(int(time(0)));
 
 	set<myStruct> train;
-	set<myStruct> test; 
+	set<myStruct> test;
 	set<myStruct> newSetRandom;
 	set<myStruct> newSetByColor;
 	//set<int> label;
@@ -290,95 +333,97 @@ int main()
 		printf(" 2 - Open JPG images from folder\n");
 		printf(" 3 - Generate random labels \n");
 		printf(" 4 - Compute random accuracy\n");
-		printf(" 5 - Generate label by image color\n");
-		printf(" 6 - Compute accuracy by color\n");
+		printf(" 5 - Compute rgb and euclidian \n");
+		printf(" 6 - Generate label by image color\n");
+		printf(" 7 - Compute accuracy by color\n");
 		printf(" 12 - Mouse callback demo\n");
 		printf(" 13 - Test BATCH opening\n");
 		printf(" 0 - Exit\n\n");
 		printf("Option: ");
-		scanf("%d",&op);
+		scanf("%d", &op);
 		switch (op)
 		{
-			case 1:
-				testOpenImage();
-				break;
-			case 2:
-				processImages(fgTrain, train, "Opening images from train_images folder");
-				processImages(fgTest, test, "Opening images from test_images folder");
-				printf("Press 'e' to exit.\n");
-				while (true) {
-					if (_kbhit()) {  
-						char ch = _getch();  
-						if (ch == 'e') {
-							break;  
-						}
+		case 1:
+			testOpenImage();
+			break;
+		case 2:
+			processImages(fgTrain, train, "Opening images from train_images folder");
+			processImages(fgTest, test, "Opening images from test_images folder");
+			printf("Press 'e' to exit.\n");
+			while (true) {
+				if (_kbhit()) {
+					char ch = _getch();
+					if (ch == 'e') {
+						break;
 					}
 				}
-				break;
-			case 3: 
-				generateLabel(test, newSetRandom, "Generating labels for test images\n");
-				printf("Press 'e' to exit.\n");
-				while (true) {
-					if (_kbhit()) {
-						char ch = _getch();
-						if (ch == 'e') {
-							break;
-						}
+			}
+			break;
+		case 3:
+			generateLabel(test, newSetRandom, "Generating labels for test images\n");
+			printf("Press 'e' to exit.\n");
+			while (true) {
+				if (_kbhit()) {
+					char ch = _getch();
+					if (ch == 'e') {
+						break;
 					}
 				}
-				break;
-			case 4: 
-				computeAccuracy(test, newSetRandom);
-				printf("Press 'e' to exit.\n");
-				while (true) {
-					if (_kbhit()) {
-						char ch = _getch();
-						if (ch == 'e') {
-							break;
-						}
+			}
+			break;
+		case 4:
+			computeAccuracy(test, newSetRandom);
+			printf("Press 'e' to exit.\n");
+			while (true) {
+				if (_kbhit()) {
+					char ch = _getch();
+					if (ch == 'e') {
+						break;
 					}
 				}
-				break;
-			case 5: 
-				readColor(test, newSetByColor);
-				printf("Press 'e' to exit.\n");
-				while (true) {
-					if (_kbhit()) {
-						char ch = _getch();
-						if (ch == 'e') {
-							break;
-						}
+			}
+			break;
+		case 5:
+			
+		case 6:
+			readColor(test, newSetByColor); // Assuming test and newSetByColor are already defined
+			printf("Press 'e' to exit.\n");
+			while (true) {
+				if (_kbhit()) {
+					char ch = _getch();
+					if (ch == 'e') {
+						break;
 					}
 				}
-				break;
-			case 6:
-				computeAccuracyByColor(test, newSetByColor);
-				printf("Press 'e' to exit.\n");
-				while (true) {
-					if (_kbhit()) {
-						char ch = _getch();
-						if (ch == 'e') {
-							break;
-						}
+			}
+			break;
+		case 7:
+			computeAccuracyByColor(test, newSetByColor);
+			printf("Press 'e' to exit.\n");
+			while (true) {
+				if (_kbhit()) {
+					char ch = _getch();
+					if (ch == 'e') {
+						break;
 					}
 				}
-				break;
-			case 12:
-				testMouseClick();
-				break;
-			case 13:
-				testSets(train, test);
-				printf("Press 'e' to exit.\n");
-				while (true) {
-					if (_kbhit()) {
-						char ch = _getch();
-						if (ch == 'e') {
-							break;
-						}
+			}
+			break;
+		case 12:
+			testMouseClick();
+			break;
+		case 13:
+			testSets(train, test);
+			printf("Press 'e' to exit.\n");
+			while (true) {
+				if (_kbhit()) {
+					char ch = _getch();
+					if (ch == 'e') {
+						break;
 					}
 				}
+			}
 		}
-	}
-	while (op!=0);
+	} while (op != 0);
 	return 0;
 }
