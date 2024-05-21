@@ -7,3 +7,21 @@ Following the organization and labeling of images, accuracy computation entailed
 To enhance prediction accuracy, a supplementary function was developed to generate labels based on dominant colors associated with Pepsi and Cola. This function focused on identifying dominant red and blue colors corresponding to Cola and Pepsi, respectively, and computing RGB values followed by Euclidean distance calculation to determine similarity. However, the accuracy of the enhanced prediction function was assessed to decrease to 43%. To address this, threshold binarization was implemented, resulting in an improved accuracy rate of 53%.
 
 Error handling and visualization were facilitated through the creation of a dedicated folder to store incorrectly predicted images. Images with inaccurate predictions were automatically relocated to this folder using a specialized function. Initial assessment without threshold binarization revealed 103 misclassified images, which reduced to 82 following the implementation of threshold binarization, highlighting the efficacy of the approach in error reduction.
+
+On the prediction method to see the result we used the confusion matrix. We add some related description to understand it better about what we see.
+Confusion Matrix:
+
+                   Actual
+             |------------------|------------------|
+  Predicted  |      Pepsi       |      Cola        |
+  |----------|------------------|------------------|
+  |   Pepsi  |   True Positive  |  False Negative  |
+  |----------|------------------|------------------|
+  |   Cola   |  False Positive  |   True Negative  |
+  --------------------------------------------------
+
+* True Positive (TP): The number of Pepsi images correctly classified as Pepsi.
+* False Negative (FN): The number of Pepsi images incorrectly classified as Cola.
+* False Positive (FP): The number of Cola images incorrectly classified as Pepsi.
+* True Negative (TN): The number of Cola images correctly classified as Cola.
+
