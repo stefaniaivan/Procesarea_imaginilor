@@ -12,6 +12,7 @@
 #include <set>
 #include <cstdio> // For printf
 #include <fstream> // For file operations
+
 //put them in folder, threshhold binarization, documentation
 using namespace std;
 
@@ -188,7 +189,7 @@ void testSets(const set<myStruct>& trainSet, const set<myStruct>& testSet) {
 	else
 		printf("The test has passed: train contains 470 files, test contains 115 files.\n");
 }
-
+/*
 void computeColor(const Mat& image, int& sumRed, int& sumBlue) {
 	sumRed = 0;
 	sumBlue = 0;
@@ -203,7 +204,28 @@ void computeColor(const Mat& image, int& sumRed, int& sumBlue) {
 			sumRed += intensity.val[2];
 		}
 	}
-} 
+} */
+void computeColor(const Mat& image, int& sumRed, int& sumBlue) {
+	// Apply threshold binarization
+	Mat binaryImage;
+	cvtColor(image, binaryImage, COLOR_BGR2GRAY); // Convert to grayscale
+	threshold(binaryImage, binaryImage, 0, 255, THRESH_BINARY | THRESH_OTSU);
+
+	sumRed = 0;
+	sumBlue = 0;
+
+	for (int y = 0; y < binaryImage.rows; y++) {
+		for (int x = 0; x < binaryImage.cols; x++) {
+			if (binaryImage.at<uchar>(y, x) == 255) { // Skip white (background) pixels
+				continue;
+			}
+			Vec3b intensity = image.at<Vec3b>(y, x);
+			sumBlue += intensity.val[0];
+			sumRed += intensity.val[2];
+		}
+	}
+}
+
 
 int readColor(set<myStruct>& testSet, set<myStruct>& newSet) {
 	for (set<myStruct>::iterator it = testSet.begin(); it != testSet.end(); it++) {
