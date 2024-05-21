@@ -6,14 +6,22 @@
 #include <conio.h>
 #include <math.h>
 
-
+#include <iostream>
+#include <vector>
+#include <string>
+#include <set>
+#include <cstdio> // For printf
+#include <fstream> // For file operations
+//put them in folder, threshhold binarization, documentation
 using namespace std;
 
 wchar_t* projectPath;
 
+
 struct myStruct {
 	string filePath;
 	int label;
+	
 };
 typedef struct {
 	int r;
@@ -105,6 +113,73 @@ void computeAccuracy(set<myStruct>& set1, set<myStruct>& set2) {
 	printf("Total value is %d.\n", total);
 	printf("Accuracy computed: %f.\n", accuracy);
 }
+void printIncorrectImages(set<myStruct>& set1, set<myStruct>& set2) {
+	vector<string> incorrectFilePaths;
+
+	auto i = set1.begin();
+	auto j = set2.begin();
+	while (i != set1.end() && j != set2.end()) {
+		if (i->label != j->label) {
+			incorrectFilePaths.push_back(i->filePath);
+		}
+		++i;
+		++j;
+	}
+
+	if (incorrectFilePaths.empty()) {
+		cout << "All images are correctly labeled.\n";
+	}
+	else {
+		cout << "Incorrectly labeled images (File Paths):\n";
+		for (const string& filePath : incorrectFilePaths) {
+			cout << "File Path: " << filePath << endl;
+		}
+	}
+}
+
+void moveIncorrectImages(set<myStruct>& set1, set<myStruct>& set2, const string& destinationFolder) {
+	vector<string> incorrectFilePaths;
+
+	auto i = set1.begin();
+	auto j = set2.begin();
+	while (i != set1.end() && j != set2.end()) {
+		if (i->label != j->label) {
+			incorrectFilePaths.push_back(i->filePath);
+		}
+		++i;
+		++j;
+	}
+
+	if (incorrectFilePaths.empty()) {
+		cout << "All images are correctly labeled.\n";
+	}
+	else {
+		cout << "Incorrectly labeled images (File Paths):\n";
+		for (const string& filePath : incorrectFilePaths) {
+			cout << "File Path: " << filePath << endl;
+		}
+
+		// Move incorrect images to the destination folder
+		for (const string& filePath : incorrectFilePaths) {
+			ifstream sourceFile(filePath, ios::binary);
+			ofstream destFile(destinationFolder + "/" + filePath.substr(filePath.find_last_of("\\/") + 1), ios::binary);
+
+			destFile << sourceFile.rdbuf(); // Copy file content
+
+			sourceFile.close();
+			destFile.close();
+
+			// Check if the move was successful
+			if (sourceFile.fail() || destFile.fail()) {
+				cout << "Failed to move file " << filePath << ".\n";
+			}
+			else {
+				cout << "Moved " << filePath << " to " << destinationFolder << ".\n";
+			}
+		}
+	}
+}
+
 
 void testSets(const set<myStruct>& trainSet, const set<myStruct>& testSet) {
 	if (trainSet.size() != 470 || testSet.size() != 115) {
@@ -179,12 +254,14 @@ void computeAccuracyByColor(set<myStruct>& testSet, set<myStruct>& newSet) {
 	float accuracy = (float)ok / total;
 
 	printf("Confusion Matrix:\n");
-	printf("       |-------|-------|\n");
-	printf("       | Pepsi | Cola  |\n");
-	printf("|------|-------|-------|\n");
-	printf("| Pepsi| %5d | %5d |\n", mat[0][0], mat[0][1]);
-	printf("| Cola | %5d | %5d |\n", mat[1][0], mat[1][1]);
-	printf("|------|-------|-------|\n");
+	printf("           |----------------|----------------|\n");
+	printf("           |   Actual       |   Actual       |\n");
+	printf("|----------|----------------|----------------|\n");
+	printf("| Predicted|     Pepsi      |     Cola       |\n");
+	printf("|----------|----------------|----------------|\n");
+	printf("| Pepsi    | %14d | %14d |\n", mat[0][0], mat[0][1]);
+	printf("| Cola     | %14d | %14d |\n", mat[1][0], mat[1][1]);
+	printf("|----------|----------------|----------------|\n");
 
 	printf("\nAccuracy: %f\n", accuracy);
 }
@@ -229,6 +306,44 @@ char* classify_image(RGB test_rgb, RGB* train_rgbs, char** train_labels, int tra
 	}
 
 	return predicted_label;
+}
+void correctPredictions(set<myStruct>& testSet, set<myStruct>& newSet) {
+	// Iterate through each image in the test set
+	for (const myStruct& real : testSet) {
+		// Find the corresponding image in the new set
+		for (auto it = newSet.begin(); it != newSet.end(); ++it) {
+			if (real.filePath == it->filePath) {
+				// Load the image
+				Mat image = imread(real.filePath, IMREAD_GRAYSCALE);
+				if (image.empty()) {
+					cerr << "Error: Unable to load image " << real.filePath << endl;
+					continue;
+				}
+
+				// Apply threshold binarization
+				Mat binaryImage;
+				threshold(image, binaryImage, 128, 255, THRESH_BINARY);
+
+				// Apply Canny edge detection
+				Mat edges;
+				Canny(binaryImage, edges, 100, 200);
+
+				// Visual inspection and manual correction
+				imshow("Edges", edges);
+				char key = waitKey(0); // Wait for user input
+				if (key == 'c') { // 'c' for correct, update label
+					myStruct temp = *it; // Copy the element to a temporary variable
+					temp.label = real.label; // Update the label of the temporary variable
+					newSet.erase(it); // Remove the old element from the set
+					newSet.insert(temp); // Insert the modified element into the set
+				}
+
+				break; // Move to the next image in the test set
+			}
+		}
+	}
+
+
 }
 
 void MyCallBackFunc(int event, int x, int y, int flags, void* param)
@@ -336,6 +451,9 @@ int main()
 		printf(" 5 - Compute rgb and euclidian \n");
 		printf(" 6 - Generate label by image color\n");
 		printf(" 7 - Compute accuracy by color\n");
+		printf(" 8 - Show inaccurately calculated images\n");
+		printf(" 9 - put incorrect images in folder\n");
+
 		printf(" 12 - Mouse callback demo\n");
 		printf(" 13 - Test BATCH opening\n");
 		printf(" 0 - Exit\n\n");
@@ -384,7 +502,7 @@ int main()
 			}
 			break;
 		case 5:
-			
+					
 		case 6:
 			readColor(test, newSetByColor); // Assuming test and newSetByColor are already defined
 			printf("Press 'e' to exit.\n");
@@ -409,6 +527,34 @@ int main()
 				}
 			}
 			break;
+		case 8:
+			computeAccuracy(test, newSetRandom);
+			printIncorrectImages(test, newSetRandom);
+			cout << "Press 'e' to exit.\n";
+			while (true) {
+				if (_kbhit()) {
+					char ch = _getch();
+					if (ch == 'e') {
+						break;
+					}
+				}
+			}
+			break;
+		case 9:
+			moveIncorrectImages(test, newSetRandom, "C:/Users/shiri/Desktop/Anul3_Sem2/PI/archive/incorrect_predicted_images");
+			//here put your file path
+			//moveIncorrectImages(test, newSetRandom, "C:/Users/shiri/Desktop/Anul3_Sem2/PI/archive/incorrect_predicted_images");
+			cout << "Press 'e' to exit.\n";
+			while (true) {
+				if (_kbhit()) {
+					char ch = _getch();
+					if (ch == 'e') {
+						break;
+					}
+				}
+			}
+			break;
+			
 		case 12:
 			testMouseClick();
 			break;
