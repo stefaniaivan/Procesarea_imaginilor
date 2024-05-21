@@ -21,13 +21,14 @@ wchar_t* projectPath;
 struct myStruct {
 	string filePath;
 	int label;
+<<<<<<< HEAD
 	
+=======
+	Vec3b RGB;
+	Vec3b averageRGBperLabel;
+>>>>>>> 9579e6fe4847aa2e7c9d502af94f27bc08d0469d
 };
-typedef struct {
-	int r;
-	int g;
-	int b;
-} RGB;
+
 
 inline bool operator<(const myStruct& lhs, const myStruct& rhs)
 {
@@ -95,6 +96,8 @@ void generateLabel(set<myStruct> testSet, set<myStruct>& newSet, const char* mes
 		printf("%s, label: %d\n", i->filePath.c_str(), i->label);
 	}
 }
+
+
 
 void computeAccuracy(set<myStruct>& set1, set<myStruct>& set2) {
 	int ok = 0;
@@ -266,46 +269,160 @@ void computeAccuracyByColor(set<myStruct>& testSet, set<myStruct>& newSet) {
 	printf("\nAccuracy: %f\n", accuracy);
 }
 // Function to calculate average RGB values of an image
-RGB calculate_average_rgb(int** image, int width, int height) {
-	int total_pixels = width * height;
-	RGB average_rgb = { 0, 0, 0 };
+//RGB calculate_average_rgb(int** image, int width, int height) {
+//	int total_pixels = width * height;
+//	RGB average_rgb = { 0, 0, 0 };
+//
+//	for (int y = 0; y < height; y++) {
+//		for (int x = 0; x < width; x++) {
+//			average_rgb.r += image[y][x] >> 16 & 0xFF;
+//			average_rgb.g += image[y][x] >> 8 & 0xFF;
+//			average_rgb.b += image[y][x] & 0xFF;
+//		}
+//	}
+//
+//	average_rgb.r /= total_pixels;
+//	average_rgb.g /= total_pixels;
+//	average_rgb.b /= total_pixels;
+//
+//	return average_rgb;
+//}
 
-	for (int y = 0; y < height; y++) {
-		for (int x = 0; x < width; x++) {
-			average_rgb.r += image[y][x] >> 16 & 0xFF;
-			average_rgb.g += image[y][x] >> 8 & 0xFF;
-			average_rgb.b += image[y][x] & 0xFF;
+Vec3b compute_rgb_per_image(const Mat& image) {
+	/*Vec3b average_rgb = (0, 0, 0);
+
+	for (int y = 0; y < image.rows; y++) {
+		for (int x = 0; x < image.cols; x++) {
+			Vec3b intensity = image.at<Vec3b>(y, x);
+			if (intensity.val[0] == 255 && intensity.val[1] == 255 && intensity.val[2] == 255) {
+				continue;
+			}
+			average_rgb[0] += intensity.val[0];
+			average_rgb[1] += intensity.val[1];
+			average_rgb[2] += intensity.val[2];
 		}
 	}
 
-	average_rgb.r /= total_pixels;
-	average_rgb.g /= total_pixels;
-	average_rgb.b /= total_pixels;
+	return average_rgb;*/
+
+	//Mat floatImage;
+	//image.convertTo(floatImage, CV_32FC3); 
+
+	Scalar meanScalar = mean(image); 
+	Vec3b average_rgb = Vec3b(meanScalar[0], meanScalar[1], meanScalar[2]); 
 
 	return average_rgb;
+	
+}
+
+pair<Vec3b, Vec3b> generateRGB(set<myStruct> trainSet, set<myStruct>& newSetRGB) {
+	Vec3i sumRGBLabel0(0, 0, 0);
+	Vec3i sumRGBLabel1(0, 0, 0);
+	int countLabel0 = 0;
+	int countLabel1 = 0;
+	for (set<myStruct>::iterator i = trainSet.begin(); i != trainSet.end(); i++) {
+		Mat image = imread(i->filePath);
+		Vec3b RGB = compute_rgb_per_image(image);
+
+		if (i->label == 0) {
+			sumRGBLabel0 += RGB;
+			countLabel0++;
+		}
+		else if (i->label == 1) {
+			sumRGBLabel1 += RGB;
+			countLabel1++;
+		}
+
+		myStruct fileData = { i->filePath.c_str(), i->label, RGB };
+		newSetRGB.insert(fileData);
+
+		if (waitKey(1) == 27)
+			break;
+	}
+
+	Vec3b avgRGBLabel0(0, 0, 0);
+	Vec3b avgRGBLabel1(0, 0, 0);
+
+	if (countLabel0 > 0) {
+		avgRGBLabel0 = Vec3b(sumRGBLabel0[0] / countLabel0, sumRGBLabel0[1] / countLabel0, sumRGBLabel0[2] / countLabel0);
+	}
+
+	if (countLabel1 > 0) {
+		avgRGBLabel1 = Vec3b(sumRGBLabel1[0] / countLabel1, sumRGBLabel1[1] / countLabel1, sumRGBLabel1[2] / countLabel1);
+	}
+
+	printf("Average RGB for label 0: (%d, %d, %d)\n", avgRGBLabel0[0], avgRGBLabel0[1], avgRGBLabel0[2]);
+	printf("Average RGB for label 1: (%d, %d, %d)\n", avgRGBLabel1[0], avgRGBLabel1[1], avgRGBLabel1[2]);
+
+
+	for (set<myStruct>::iterator i = newSetRGB.begin(); i != newSetRGB.end(); i++) {
+		myStruct& current = const_cast<myStruct&>(*i);
+		if (current.label == 0) {
+			current.averageRGBperLabel = avgRGBLabel0;
+		}
+		else if (current.label == 1) {
+			current.averageRGBperLabel = avgRGBLabel1;
+		}
+		printf("%s, RGB: (%d, %d, %d), Average RGB by label: (%d, %d, %d)\n",i->filePath.c_str(), i->RGB[0], i->RGB[1], i->RGB[2], i->averageRGBperLabel[0], i->averageRGBperLabel[1], i->averageRGBperLabel[2]);
+	}
+
+	return make_pair(avgRGBLabel0, avgRGBLabel1);
 }
 
 // Function to calculate Euclidean distance between two RGB values
-float calculate_euclidean_distance(RGB rgb1, RGB rgb2) {
-	float distance = sqrt(pow(rgb1.r - rgb2.r, 2) + pow(rgb1.g - rgb2.g, 2) + pow(rgb1.b - rgb2.b, 2));
+//float calculate_euclidean_distance(RGB rgb1, RGB rgb2) {
+//	float distance = sqrt(pow(rgb1.r - rgb2.r, 2) + pow(rgb1.g - rgb2.g, 2) + pow(rgb1.b - rgb2.b, 2));
+//	return distance;
+//}
+
+float calculate_euclidean_distance(const Vec3b& v1, const Vec3b& v2) {
+	float distance = sqrt(pow(v1[2] - v2[2], 2) + pow(v1[1] - v2[1], 2) + pow(v1[0] - v2[0], 2));
 	return distance;
 }
 
 // Function to classify a test image based on average RGB values of training images
-char* classify_image(RGB test_rgb, RGB* train_rgbs, char** train_labels, int train_size) {
-	float min_distance = INFINITY;
-	char* predicted_label = NULL;
+//char* classify_image(RGB test_rgb, RGB* train_rgbs, char** train_labels, int train_size) {
+//	float min_distance = INFINITY;
+//	char* predicted_label = NULL;
+//
+//	for (int i = 0; i < train_size; i++) {
+//		float distance = calculate_euclidean_distance(test_rgb, train_rgbs[i]);
+//
+//		if (distance < min_distance) {
+//			min_distance = distance;
+//			predicted_label = train_labels[i];
+//		}
+//	}
+//
+//	return predicted_label;
+//}
 
-	for (int i = 0; i < train_size; i++) {
-		float distance = calculate_euclidean_distance(test_rgb, train_rgbs[i]);
+void assignLabels(set<myStruct>& testSet, set<myStruct>& newTestSetRGB, Vec3b& avgRGBLabel0,Vec3b& avgRGBLabel1) {
+	int predictedLabel = 0;
+	for (set<myStruct>::iterator i = testSet.begin(); i != testSet.end(); i++) {
+		Mat image = imread(i->filePath);
+		Vec3b RGB = compute_rgb_per_image(image);
+		double distToLabel0 = calculate_euclidean_distance(RGB, avgRGBLabel0);
+		double distToLabel1 = calculate_euclidean_distance(RGB, avgRGBLabel1);
 
-		if (distance < min_distance) {
-			min_distance = distance;
-			predicted_label = train_labels[i];
+		/*printf("%d, %d, %d\n", avgRGBLabel0[0], avgRGBLabel0[1], avgRGBLabel0[2]);
+		printf("%d, %d, %d\n", avgRGBLabel1[0], avgRGBLabel1[1], avgRGBLabel1[2]);*/
+
+		if (distToLabel0 < distToLabel1) {
+			predictedLabel = 0;
 		}
+		else {
+			predictedLabel = 1;
+		}
+
+		myStruct fileData = { i->filePath.c_str(), predictedLabel};
+		newTestSetRGB.insert(fileData);
+
 	}
 
-	return predicted_label;
+	for (set<myStruct>::iterator i = newTestSetRGB.begin(); i != newTestSetRGB.end(); i++) {
+		printf("%s, label: %d\n", i->filePath.c_str(), i->label);
+	}
 }
 void correctPredictions(set<myStruct>& testSet, set<myStruct>& newSet) {
 	// Iterate through each image in the test set
@@ -345,6 +462,7 @@ void correctPredictions(set<myStruct>& testSet, set<myStruct>& newSet) {
 
 
 }
+
 
 void MyCallBackFunc(int event, int x, int y, int flags, void* param)
 {
@@ -425,14 +543,20 @@ int main()
 	set<myStruct> test;
 	set<myStruct> newSetRandom;
 	set<myStruct> newSetByColor;
+	set<myStruct> newSetRGB;
+	set<myStruct> newTestSetRGB;
+
+	pair<Vec3b, Vec3b> result;
+	Vec3b avgRGBLabel0, avgRGBLabel1;
+
 	//set<int> label;
 
-	char folderName[] = "C:/Users/shiri/Desktop/Anul3_Sem2/PI/archive/";
+	/*char folderName[] = "C:/Users/shiri/Desktop/Anul3_Sem2/PI/archive/";
 	char trainFolderPath[] = "C:/Users/shiri/Desktop/Anul3_Sem2/PI/archive/train_images";
-	char testFolderPath[] = "C:/Users/shiri/Desktop/Anul3_Sem2/PI/archive/test_images";
-	//char folderName[] = "D:/PI/archive/";
-	//char trainFolderPath[] = "D:/PI/archive/train_images";
-	//char testFolderPath[] = "D:/PI/archive/test_images";
+	char testFolderPath[] = "C:/Users/shiri/Desktop/Anul3_Sem2/PI/archive/test_images";*/
+	char folderName[] = "D:/PI/archive/";
+	char trainFolderPath[] = "D:/PI/archive/train_images";
+	char testFolderPath[] = "D:/PI/archive/test_images";
 
 	FileGetter fgTrain = { trainFolderPath, "jpg" };
 	FileGetter fgTest = { testFolderPath, "jpg" };
@@ -451,9 +575,15 @@ int main()
 		printf(" 5 - Compute rgb and euclidian \n");
 		printf(" 6 - Generate label by image color\n");
 		printf(" 7 - Compute accuracy by color\n");
+<<<<<<< HEAD
 		printf(" 8 - Show inaccurately calculated images\n");
 		printf(" 9 - put incorrect images in folder\n");
 
+=======
+		printf(" 8 - Compute RGB per image for train set\n");
+		printf(" 9 - Generate label using euclidian distance\n");
+		printf(" 10 - Compute accuracy by euclidian distance\n");
+>>>>>>> 9579e6fe4847aa2e7c9d502af94f27bc08d0469d
 		printf(" 12 - Mouse callback demo\n");
 		printf(" 13 - Test BATCH opening\n");
 		printf(" 0 - Exit\n\n");
@@ -527,10 +657,17 @@ int main()
 				}
 			}
 			break;
+<<<<<<< HEAD
 		case 8:
 			computeAccuracy(test, newSetRandom);
 			printIncorrectImages(test, newSetRandom);
 			cout << "Press 'e' to exit.\n";
+=======
+
+		case 8: 
+			result = generateRGB(train, newSetRGB);
+			printf("Press 'e' to exit.\n");
+>>>>>>> 9579e6fe4847aa2e7c9d502af94f27bc08d0469d
 			while (true) {
 				if (_kbhit()) {
 					char ch = _getch();
@@ -540,11 +677,20 @@ int main()
 				}
 			}
 			break;
+<<<<<<< HEAD
 		case 9:
 			moveIncorrectImages(test, newSetRandom, "C:/Users/shiri/Desktop/Anul3_Sem2/PI/archive/incorrect_predicted_images");
 			//here put your file path
 			//moveIncorrectImages(test, newSetRandom, "C:/Users/shiri/Desktop/Anul3_Sem2/PI/archive/incorrect_predicted_images");
 			cout << "Press 'e' to exit.\n";
+=======
+
+		case 9:
+			
+			avgRGBLabel0 = result.first;
+			avgRGBLabel1 = result.second;
+			assignLabels(test, newTestSetRGB, avgRGBLabel0, avgRGBLabel1);
+			printf("Press 'e' to exit.\n");
 			while (true) {
 				if (_kbhit()) {
 					char ch = _getch();
@@ -554,7 +700,24 @@ int main()
 				}
 			}
 			break;
+
+		case 10:
+			computeAccuracyByColor(test, newTestSetRGB);
+			printf("Press 'e' to exit.\n");
+>>>>>>> 9579e6fe4847aa2e7c9d502af94f27bc08d0469d
+			while (true) {
+				if (_kbhit()) {
+					char ch = _getch();
+					if (ch == 'e') {
+						break;
+					}
+				}
+			}
+			break;
+<<<<<<< HEAD
 			
+=======
+>>>>>>> 9579e6fe4847aa2e7c9d502af94f27bc08d0469d
 		case 12:
 			testMouseClick();
 			break;
