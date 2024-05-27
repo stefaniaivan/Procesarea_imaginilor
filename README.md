@@ -96,7 +96,6 @@ The myStruct structure encapsulates essential data about each image. It contains
 
    Scenarios where the method failed
    - Mixed Colors in Packaging:
-
     Many Pepsi products feature packaging with significant amounts of both red and blue. This can confuse the algorithm, leading to incorrect labels.
     Example: The image new_pepsi (256).jpg.jpg has both prominent red and blue areas, which could lead to misclassification.
     Special Editions and Variants:
@@ -118,8 +117,8 @@ The myStruct structure encapsulates essential data about each image. It contains
 
 ![img_2.png](img_2.png)
 
-    Images incorrectly labeled by this method:
-    ![img_4.png](img_4.png)
+Images incorrectly labeled by this method:
+![img_4.png](img_4.png)
 
 4. _Euclidean Distance-Based Classification_
    + Accuracy: This method demonstrated a lower accuracy of 58% (0.58) due to the extremely close average RGB values between the two labels, which made distinguishing between them more challenging.
