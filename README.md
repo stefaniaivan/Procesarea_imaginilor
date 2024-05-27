@@ -89,7 +89,8 @@ The myStruct structure encapsulates essential data about each image. It contains
 2. _Color-based Classification_
    + Accuracy: The color-based classification method achieved an accuracy of 80% (0.8000). 
    + Conclusion: The method was relatively effective but could be further improved by incorporating additional features and refining the color detection algorithms.
-    ![img_1.png](img_1.png)
+
+![img_1.png](img_1.png)
    
    Images incorrectly labeled by this method:
    ![img_5.png](img_5.png)
