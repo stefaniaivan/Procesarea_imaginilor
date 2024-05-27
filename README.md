@@ -84,6 +84,7 @@ The myStruct structure encapsulates essential data about each image. It contains
 
    + Accuracy: As expected, the accuracy of random labeling was approximately 50%, given the equal probability of assigning any label.
    + Conclusion: Random labeling is not a viable method for practical image classification tasks.
+
 ![img.png](img.png)
 
 2. _Color-based Classification_
