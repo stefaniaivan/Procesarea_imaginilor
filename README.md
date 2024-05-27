@@ -115,7 +115,8 @@ The myStruct structure encapsulates essential data about each image. It contains
 3. _Specific Color Detection for Pepsi Logo_
    + Accuracy: The accuracy of this method was high, achieving 94% (0.94) for images with distinct color patterns representative of Pepsi and Cola.
    + Conclusion: This method is highly effective for distinguishing Pepsi cans and shows great potential for real-world applications with minimal false positives.
-    ![img_2.png](img_2.png)
+
+![img_2.png](img_2.png)
 
     Images incorrectly labeled by this method:
     ![img_4.png](img_4.png)
@@ -123,4 +124,5 @@ The myStruct structure encapsulates essential data about each image. It contains
 4. _Euclidean Distance-Based Classification_
    + Accuracy: This method demonstrated a lower accuracy of 58% (0.58) due to the extremely close average RGB values between the two labels, which made distinguishing between them more challenging.
    + Conclusion: While the Euclidean distance-based method showed potential, its performance was hindered by the close proximity of average RGB values for Pepsi and Cola images. Further refinement and additional features might improve its accuracy.
-    ![img_3.png](img_3.png)
+
+![img_3.png](img_3.png)
