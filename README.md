@@ -100,9 +100,8 @@ The myStruct structure encapsulates essential data about each image. It contains
    - Mixed Colors in Packaging:
     Many Pepsi products feature packaging with significant amounts of both red and blue. This can confuse the algorithm, leading to incorrect labels.
     Example: The image new_pepsi (256).jpg.jpg has both prominent red and blue areas, which could lead to misclassification.
-    Special Editions and Variants:
 
-   - Special editions of Pepsi or Cola products may have different color schemes that deviate from the typical red or blue dominance.
+   - Special Editions and Variants: Special editions of Pepsi or Cola products may have different color schemes that deviate from the typical red or blue dominance.
     Example: The image new_pepsi (252).jpg.jpg shows a Pepsi Mango variant with a significant amount of orange and black, which can skew the color analysis.
 
    - Background and Advertising Content:
